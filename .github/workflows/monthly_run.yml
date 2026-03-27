@@ -2,7 +2,6 @@ name: Monthly Automation
 
 on:
   schedule:
-    - cron: '0 3 16 * *'
     - cron: '0 1 5 * *'
   workflow_dispatch:
 
