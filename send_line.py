@@ -132,8 +132,11 @@ def send_monthly_broadcast():
             print(f"ページ内操作中にエラーが発生しました: {e}")
         #期限取得
         try:
-            deadline_text = page.locator("span:has-text('入力締切済')").first.inner_text()
-            #print(f"取得したテキスト: {deadline_text}")
+            deadline_text=["",""]
+            deadline_text[0] = page.locator("span:has-text('月施設仮予約')").nth(0).inner_text()
+            deadline_text[1] = page.locator("span:has-text('月施設仮予約')").nth(1).inner_text()
+            sum_deadline_text=deadline_text[0]+deadline_text[1]
+            print(f"合わせた文章: {sum_deadline_text}")
             # ドット（.）が改行も含むように re.DOTALL を使うのがコツです
             # 1つ目の ( ) は「当月」の後のカッコ内
             # 2つ目の ( ) は「翌月」の後のカッコ内
@@ -142,7 +145,7 @@ def send_monthly_broadcast():
             # re.DOTALL を指定することで、複数行にまたがって検索できます
             current_month = ""
             next_month = ""
-            match = re.search(pattern, deadline_text, re.DOTALL)
+            match = re.search(pattern, sum_deadline_text, re.DOTALL)
             if match:
                 current_month = match.group(1) # 当月の分
                 next_month = match.group(2)    # 翌月の分
