@@ -10,6 +10,7 @@ from firebase_admin import credentials, db
 from firebase_admin import firestore
 from linebot.v3.messaging import Configuration, ApiClient, MessagingApi, BroadcastRequest, TextMessage
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
 
@@ -17,19 +18,19 @@ MAIL_OMU = "sh23701v@st.omu.ac.jp"
 OMUID = "sh23701v"
 PASSWORD = os.environ.get("LONG_PASSWORD")
 TOTP_OMU = os.environ.get("TOTP_OMU")
-FORM_URL = "https://omunet.sharepoint.com/sites/kagai/SitePages/%E6%95%99%E5%AE%A4%E7%AD%89%E3%81%AE%E4%BA%88%E7%B4%84-%E5%85%A8%E5%AD%A6%E5%85%B1%E9%80%9A%E6%95%99%E8%82%B2%E7%AD%89%EF%BC%8F1%E5%8F%B7%E9%A4%A8%EF%BC%8F%E6%B3%95%E5%AD%A6%E9%83%A8%E6%A3%9F%EF%BC%8F%E5%AD%A6%E7%94%9F%EF%BE%8E%EF%BD%B0%EF%BE%99%EF%BC%8F%E7%94%B0%E4%B8%AD%E8%A8%98%E5%BF%B5%E9%A4%A8%EF%BC%8F%E9%9F%B3%E6%A5%BD%E7%B7%B4%E7%BF%92%E5%AE%A4%EF%BC%8F%E5%90%88%E5%AE%BF%E6%89%80%E4%BB%96.aspx"
-
+SUGIMOTO_URL = "https://omunet.sharepoint.com/sites/kagai/SitePages/%E6%95%99%E5%AE%A4%E7%AD%89%E3%81%AE%E4%BA%88%E7%B4%84-%E5%85%A8%E5%AD%A6%E5%85%B1%E9%80%9A%E6%95%99%E8%82%B2%E7%AD%89%EF%BC%8F1%E5%8F%B7%E9%A4%A8%EF%BC%8F%E6%B3%95%E5%AD%A6%E9%83%A8%E6%A3%9F%EF%BC%8F%E5%AD%A6%E7%94%9F%EF%BE%8E%EF%BD%B0%EF%BE%99%EF%BC%8F%E7%94%B0%E4%B8%AD%E8%A8%98%E5%BF%B5%E9%A4%A8%EF%BC%8F%E9%9F%B3%E6%A5%BD%E7%B7%B4%E7%BF%92%E5%AE%A4%EF%BC%8F%E5%90%88%E5%AE%BF%E6%89%80%E4%BB%96.aspx"
+MORINOMIYA_URL = "https://omunet.sharepoint.com/sites/kagai/SitePages/%E6%95%99%E5%AE%A4%E4%BA%88%E7%B4%84.aspx"
 
 def send_monthly_broadcast():
     with sync_playwright() as p:
         # ブラウザを起動 (headless=False で動作が見えるようにします)
         print("ブラウザを起動中...")
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=False)
         context = browser.new_context(locale="ja-JP")
         page = context.new_page()
 
-        print(f"フォームにアクセス中: {FORM_URL}")
-        page.goto(FORM_URL)
+        print(f"フォームにアクセス中: {SUGIMOTO_URL}")
+        page.goto(SUGIMOTO_URL)
 
         # 1. Microsoft ログイン
         print("Microsoft ログイン中...")
@@ -107,8 +108,8 @@ def send_monthly_broadcast():
             print(f"ページ内の <a> タグの数: {len(links_data)}")
             print(links_data)
             found = False
-            factor=[]
-            url=[]
+            Sugimoto_factor=[]
+            Sugimoto_url=[]
 
             for data in links_data:
                 text = data.get("text") or ""
@@ -121,8 +122,8 @@ def send_monthly_broadcast():
                     print(f"要素名: {label}")
                     print(f"URL: {href}")
                     print("-" * 30)
-                    factor.append(label)
-                    url.append(href)
+                    Sugimoto_factor.append(label)
+                    Sugimoto_url.append(href)
                     found = True
 
             if not found:
@@ -130,34 +131,88 @@ def send_monthly_broadcast():
                 
         except Exception as e:
             print(f"ページ内操作中にエラーが発生しました: {e}")
+
         #期限取得
         try:
-            deadline_text=["",""]
-            deadline_text[0] = page.locator("span:has-text('月施設仮予約')").nth(0).inner_text()
-            deadline_text[1] = page.locator("span:has-text('月施設仮予約')").nth(1).inner_text()
-            sum_deadline_text=deadline_text[0]+deadline_text[1]
-            print(f"合わせた文章: {sum_deadline_text}")
+            sugimoto_deadline_text=["",""]
+            sugimoto_deadline_text[0] = page.locator("span:has-text('月施設仮予約')").nth(0).inner_text()
+            sugimoto_deadline_text[1] = page.locator("span:has-text('月施設仮予約')").nth(1).inner_text()
+            sum_sugimoto_deadline_text=sugimoto_deadline_text[0]+sugimoto_deadline_text[1]
+            print(f"合わせた文章: {sum_sugimoto_deadline_text}")
             # ドット（.）が改行も含むように re.DOTALL を使うのがコツです
             # 1つ目の ( ) は「当月」の後のカッコ内
             # 2つ目の ( ) は「翌月」の後のカッコ内
             pattern = r"＜当　月＞.*?（(.*?入力締切).*?＜翌　月＞.*?（(.*?入力締切)"
 
             # re.DOTALL を指定することで、複数行にまたがって検索できます
-            current_month = ""
-            next_month = ""
-            match = re.search(pattern, sum_deadline_text, re.DOTALL)
+            sugimoto_current_month = ""
+            sugimoto_next_month = ""
+            match = re.search(pattern, sum_sugimoto_deadline_text, re.DOTALL)
             if match:
-                current_month = match.group(1) # 当月の分
-                next_month = match.group(2)    # 翌月の分
+                sugimoto_current_month = match.group(1) # 当月の分
+                sugimoto_next_month = match.group(2)    # 翌月の分
             
         except Exception as e:
             print(f"エラーが発生しました: {e}")
             # 処理終了後すぐにブラウザが閉じないように待機します
+
+        try:
+            page.goto(MORINOMIYA_URL)
+            print("SharePointのページ読み込みを待機しています...")
+            page.wait_for_load_state("networkidle", timeout=10000)
+            time.sleep(3) # 念入りに待機
+            for _ in range(15):
+                page.keyboard.press("PageDown")
+                page.mouse.wheel(0, 800)
+                time.sleep(1)
+            time.sleep(2)
+
+        except Exception as e:
+            print(f"ページ内操作中にエラーが発生しました: {e}")
+        try:
+            # locator.evaluate_all を使ってJavaScript側で一括取得する(高速かつ安定)
+            links_data = page.locator("a").evaluate_all(
+                "elements => elements.map(e => ({ text: e.innerText, ariaLabel: e.getAttribute('aria-label'), href: e.href }))"
+            )
+            
+            print(f"ページ内の <a> タグの数: {len(links_data)}")
+            print(links_data)
+            found = False
+            Morinomiya_factor=[]
+            Morinomiya_url=[]
+
+            for data in links_data:
+                text = data.get("text") or ""
+                aria_label = data.get("ariaLabel") or ""
+                href = data.get("href") or ""
+                
+                # 「教室」または「ｽﾌﾟﾚｯﾄﾞ」が含まれるかチェック
+                if href and ("教室予約" in text):
+                    print(f"URL: {href}")
+                    print("-" * 30)
+                    Morinomiya_url.append(href)
+                    found = True
+
+            if not found:
+                print("目的のリンクは見つかりませんでした。")
+                
+        except Exception as e:
+            print(f"ページ内操作中にエラーが発生しました: {e}")
         cred = credentials.Certificate("service-account.json")
         firebase_admin.initialize_app(cred)
         db = firestore.client()
         OK = db.collection('latest_broadcast').document('text').get().to_dict().get("Confirm")
-        message_text=[f"{factor[0][2:]}({current_month})\nリンク：{url[0]}",f"{factor[1][2:]}({next_month})\nリンク：{url[1]}"]
+        now = datetime.now()
+        if now.month==12:
+            next_month=1
+            next_year=now.year+1
+        else:
+            next_month=now.month+1
+            next_year=now.year
+        message_text=[f"【杉本】{Sugimoto_factor[0][2:]}({sugimoto_current_month})\nリンク：{Sugimoto_url[0]}",
+        f"【杉本】{Sugimoto_factor[1][2:]}({sugimoto_next_month})\nリンク：{Sugimoto_url[1]}",
+        f"\n【森ノ宮】{now.year}年{now.month}月教室等ｽﾌﾟﾚｯﾄﾞｼｰﾄ({now.month}/1 9:00受付開始➡{now.month}/15 15:00入力締切)\nリンク：{Morinomiya_url[1]}",
+        f"\n【森ノ宮】{next_year}年{next_month}月教室等ｽﾌﾟﾚｯﾄﾞｼｰﾄ({next_month}/1 9:00受付開始➡{next_month}/15 15:00入力締切)\nリンク：{Morinomiya_url[0]}"]
         if OK:
             try:
                 LINE_ACCESS_TOKEN = os.environ.get("LINE_ACCESS_TOKEN")
@@ -166,7 +221,9 @@ def send_monthly_broadcast():
                 message=[]
                 message.append(TextSendMessage(text=message_text[0]))
                 message.append(TextSendMessage(text=message_text[1]))
-                
+                message.append(TextSendMessage(text=message_text[2]))
+                message.append(TextSendMessage(text=message_text[3]))
+                message.append(TextSendMessage(text="森ノ宮の施設はシートに書くだけじゃなくて、申請書も出さないといけないから注意してね！"))
                 # 友だち全員に一斉送信（ブロードキャスト）
                 line_bot_api.broadcast(message)
                 print("友だち全員への送信に成功しました。")
@@ -181,7 +238,9 @@ def send_monthly_broadcast():
             # .set() を使うと、指定したIDで保存されます（既存なら上書き）
             db.collection("latest_broadcast").document(doc_id).update({"0": message_text[0]})
             db.collection("latest_broadcast").document(doc_id).update({"1": message_text[1]})
-            print(f"ドキュメント {doc_id} に{data}を保存しました")
+            db.collection("latest_broadcast").document(doc_id).update({"2": message_text[2]})
+            db.collection("latest_broadcast").document(doc_id).update({"3": message_text[3]})
+            print(f"ドキュメント {doc_id} に{message_text}を保存しました")
 
         set_data_with_id()
 
