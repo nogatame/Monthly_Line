@@ -205,14 +205,14 @@ def send_monthly_broadcast():
         now = datetime.now()
         if now.month==12:
             next_month=1
-            next_year=now.year+1
+            now_year=now.year+1
         else:
             next_month=now.month+1
-            next_year=now.year
+            now_year=now.year
         message_text=[f"【杉本】{Sugimoto_factor[0][2:]}({sugimoto_current_month})\nリンク：{Sugimoto_url[0]}",
         f"【杉本】{Sugimoto_factor[1][2:]}({sugimoto_next_month})\nリンク：{Sugimoto_url[1]}",
-        f"【森ノ宮】{now.year}年{now.month}月教室等ｽﾌﾟﾚｯﾄﾞｼｰﾄ({now.month}/1 9:00受付開始➡{now.month}/15 15:00入力締切)\nリンク：{Morinomiya_url[1]}",
-        f"【森ノ宮】{next_year}年{next_month}月教室等ｽﾌﾟﾚｯﾄﾞｼｰﾄ({next_month}/1 9:00受付開始➡{next_month}/15 15:00入力締切)\nリンク：{Morinomiya_url[0]}"]
+        f"【森ノ宮】{now.year}年{now.month}月教室等ｽﾌﾟﾚｯﾄﾞｼｰﾄ({now.month-1}/1 9:00受付開始➡{now.month-1}/15 15:00入力締切)\nリンク：{Morinomiya_url[1]}",
+        f"【森ノ宮】{now_year}年{next_month}月教室等ｽﾌﾟﾚｯﾄﾞｼｰﾄ({now.month}/1 9:00受付開始➡{now.month}/15 15:00入力締切)\nリンク：{Morinomiya_url[0]}"]
         if OK:
             try:
                 LINE_ACCESS_TOKEN = os.environ.get("LINE_ACCESS_TOKEN")
