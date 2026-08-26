@@ -8,9 +8,15 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,3 +40,10 @@ jobs:
           TOTP_OMU: ${{ secrets.TOTP_OMU }}
           LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: python send_line.py
+      - name: Keepalive (Safe Empty Commit)
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout main
+          git commit --allow-empty -m "chore: keepalive [skip ci]"
+          git push origin main
