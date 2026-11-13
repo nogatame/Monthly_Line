@@ -80,6 +80,8 @@ def send_monthly_broadcast():
 
         print("\nログインが完了しました！")
         print("SharePointのページ読み込みを待機しています...")
+
+        page.goto(SUGIMOTO_URL, wait_until="networkidle")
         
         # ページ内の要素が表示されるまで少し待つ
         try:
@@ -198,7 +200,10 @@ def send_monthly_broadcast():
                 
         except Exception as e:
             print(f"ページ内操作中にエラーが発生しました: {e}")
-        cred = credentials.Certificate("service-account.json")
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        cred_path = os.path.join(base_dir, "service-account.json")
+
+        cred = credentials.Certificate(cred_path)
         firebase_admin.initialize_app(cred)
         db = firestore.client()
         OK = db.collection('latest_broadcast').document('text').get().to_dict().get("Confirm")
